@@ -1,0 +1,1639 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sistema Preventivo — Dashboard Tester (1 archivo)</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f1728; --card:#121c33;
+      --text:#e8eeff; --muted:#9aa7c7; --line:#223055;
+      --pri:#3a7bff; --ok:#2cff9d; --err:#ff5c7a; --warn:#ffcc66;
+      --shadow1: 10px 10px 24px rgba(0,0,0,.45);
+      --shadow2: -10px -10px 24px rgba(255,255,255,.04);
+      --inset1: inset 6px 6px 14px rgba(0,0,0,.55);
+      --inset2: inset -6px -6px 14px rgba(255,255,255,.05);
+      --radius:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; font-family:var(--sans);
+      background: radial-gradient(1200px 700px at 20% 10%, #12224a 0%, var(--bg) 55%),
+                  radial-gradient(900px 600px at 90% 20%, #1a2a5a 0%, var(--bg) 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      position: sticky; top:0; z-index:50;
+      background: rgba(11,18,32,.75);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(34,48,85,.7);
+    }
+    .topbar{
+      max-width: 1400px; margin:0 auto; padding:14px 18px;
+      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .logo{
+      width:40px; height:40px; border-radius:14px;
+      background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(0,0,0,.35));
+      box-shadow: var(--shadow1), var(--shadow2);
+      display:grid; place-items:center;
+      border:1px solid rgba(34,48,85,.8);
+    }
+    .logo span{ font-weight:800; letter-spacing:.5px; color:#cfe0ff; }
+    .brand h1{ margin:0; font-size:14px; font-weight:750; }
+    .sub{ margin:0; font-size:12px; color:var(--muted); }
+    .statusRow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill{
+      display:flex; gap:8px; align-items:center;
+      padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(34,48,85,.8);
+      background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(0,0,0,.35));
+      box-shadow: var(--shadow1), var(--shadow2);
+      font-size:12px;
+    }
+    .dot{ width:10px; height:10px; border-radius:50%; background: var(--err); box-shadow:0 0 0 3px rgba(255,92,122,.12); }
+    .dot.ok{ background: var(--ok); box-shadow:0 0 0 3px rgba(44,255,157,.12); }
+    .dot.warn{ background: var(--warn); box-shadow:0 0 0 3px rgba(255,204,102,.12); }
+    .k{ font-family:var(--mono); color:#cfe0ff; }
+
+    .app{
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 18px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 1100px){
+      .app{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(0,0,0,.25));
+      border:1px solid rgba(34,48,85,.85);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow1), var(--shadow2);
+      overflow:hidden;
+    }
+    .cardHead{
+      padding: 14px 16px;
+      border-bottom:1px solid rgba(34,48,85,.7);
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    }
+    .cardHead h2{ margin:0; font-size:13px; font-weight:800; color:#dbe7ff; }
+    .cardHead .hint{ font-size:12px; color:var(--muted); }
+    .cardBody{ padding: 14px 16px; }
+
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; }
+    .tab{
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(34,48,85,.85);
+      background: rgba(15,23,40,.6);
+      box-shadow: var(--inset1), var(--inset2);
+      color: var(--muted);
+      font-size:12px; font-weight:700;
+      cursor:pointer; user-select:none;
+    }
+    .tab.active{
+      background: rgba(58,123,255,.18);
+      color: #dbe7ff;
+      border-color: rgba(58,123,255,.55);
+    }
+
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    @media (max-width: 700px){ .grid2{ grid-template-columns: 1fr; } }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+    input, select, textarea{
+      width:100%;
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(34,48,85,.9);
+      background: rgba(15,23,40,.65);
+      color: var(--text);
+      box-shadow: var(--inset1), var(--inset2);
+      outline:none;
+    }
+    textarea{ min-height: 120px; font-family: var(--mono); font-size:12px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .row > *{ flex: 1 1 170px; }
+    .btnRow{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
+    button{
+      padding: 10px 12px;
+      border:none;
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(58,123,255,.95), rgba(35,95,230,.95));
+      color:white; font-weight:800;
+      box-shadow: var(--shadow1), var(--shadow2);
+      cursor:pointer;
+      border:1px solid rgba(58,123,255,.35);
+    }
+    button:hover{ filter: brightness(1.06); }
+    button:disabled{ opacity:.45; cursor:not-allowed; }
+    .ghost{
+      background: rgba(15,23,40,.45);
+      border:1px solid rgba(34,48,85,.85);
+      color: var(--text);
+    }
+    .bad{ background: linear-gradient(145deg, rgba(255,92,122,.95), rgba(205,40,78,.95)); border-color: rgba(255,92,122,.35); }
+    .okbtn{ background: linear-gradient(145deg, rgba(44,255,157,.9), rgba(10,185,110,.9)); color:#062114; border-color: rgba(44,255,157,.35); }
+    .small{ font-size:12px; color:var(--muted); }
+    .hr{ height:1px; background: rgba(34,48,85,.7); margin: 12px 0; }
+
+    .list{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .item{
+      border:1px solid rgba(34,48,85,.8);
+      border-radius: 16px;
+      padding: 10px 10px;
+      background: rgba(15,23,40,.45);
+      box-shadow: var(--inset1), var(--inset2);
+      cursor:pointer;
+    }
+    .item:hover{ border-color: rgba(58,123,255,.55); }
+    .itemTitle{
+      font-weight:850; font-size:12px; color:#dbe7ff;
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+    }
+    .itemMeta{ font-size:12px; color:var(--muted); margin-top:4px; }
+    .badge{
+      font-size:11px; padding:4px 8px; border-radius:999px;
+      border:1px solid rgba(34,48,85,.85);
+      color:#cfe0ff;
+      background: rgba(11,18,32,.55);
+      font-family: var(--mono);
+    }
+
+    /* Modal + Toast */
+    #modal{
+      position: fixed; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      background: rgba(0,0,0,.6);
+      z-index:200;
+      padding: 18px;
+    }
+    .modalBox{
+      width: min(820px, 100%);
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(0,0,0,.35));
+      border:1px solid rgba(34,48,85,.9);
+      box-shadow: var(--shadow1), var(--shadow2);
+      overflow:hidden;
+    }
+    .modalTop{
+      padding: 14px 16px;
+      border-bottom:1px solid rgba(34,48,85,.7);
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+    }
+    .modalTop h3{ margin:0; font-size:13px; font-weight:900; }
+    .modalBody{ padding: 14px 16px; }
+    .modalBody pre{
+      margin:0;
+      background: rgba(10,17,32,.75);
+      border:1px solid rgba(34,48,85,.85);
+      border-radius: 16px;
+      padding: 12px;
+      max-height: 55vh;
+      overflow:auto;
+      font-size:12px;
+      font-family: var(--mono);
+    }
+
+    .toastWrap{
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 250;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      max-width: 420px;
+    }
+    .toast{
+      border-radius: 16px;
+      padding: 10px 12px;
+      border:1px solid rgba(34,48,85,.85);
+      background: rgba(15,23,40,.85);
+      box-shadow: var(--shadow1), var(--shadow2);
+      font-size:12px;
+    }
+    .toast.ok{ border-color: rgba(44,255,157,.35); }
+    .toast.err{ border-color: rgba(255,92,122,.35); }
+    .toast .tTitle{ font-weight:900; margin-bottom:4px; }
+    .toast .tMsg{ color: var(--muted); line-height:1.25; }
+    .toast .tMsg .k{ color:#cfe0ff; }
+
+    /* Debug panel */
+    .dbg{
+      border-radius: 16px;
+      padding: 10px 12px;
+      border:1px dashed rgba(34,48,85,.8);
+      background: rgba(10,17,32,.4);
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #cfe0ff;
+      white-space: pre-wrap;
+      overflow:auto;
+      max-height: 260px;
+    }
+    .mutedBox{
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(34,48,85,.8);
+      background: rgba(10,17,32,.35);
+      color: var(--muted);
+      font-size:12px;
+      box-shadow: var(--inset1), var(--inset2);
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"><span>SP</span></div>
+      <div>
+        <h1>Sistema Preventivo — Dashboard Tester (1 archivo)</h1>
+        <p class="sub">Flujo guiado + panel derecho con tus recursos + requests manuales + telemetría (API KEY)</p>
+      </div>
+    </div>
+    <div class="statusRow">
+      <div class="pill"><span id="authDot" class="dot"></span><span id="authText">No autenticado</span></div>
+      <div class="pill"><span class="small">Base</span> <span id="baseShort" class="k">—</span></div>
+      <div class="pill"><span class="small">User</span> <span id="userShort" class="k">—</span></div>
+      <div class="pill"><span class="small">JWT</span> <span id="tokenShort" class="k">—</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- LEFT: FLOW + FORMS -->
+  <div class="card">
+    <div class="cardHead">
+      <h2>Flujo principal</h2>
+      <div class="tabs" id="flowTabs"></div>
+    </div>
+    <div class="cardBody">
+      <!-- CONFIG -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="cardHead">
+          <h2>Configuración</h2>
+          <span class="hint">Se guarda en LocalStorage</span>
+        </div>
+        <div class="cardBody">
+          <div class="grid2">
+            <div>
+              <label>Base URL API</label>
+              <input id="baseUrl" placeholder="http://localhost:5000">
+            </div>
+            <div>
+              <label>API Key Telemetría (X-API-KEY)</label>
+              <input id="apiKey" placeholder="SISTEMA_LORA_SECRET_2026">
+            </div>
+          </div>
+          <div class="btnRow">
+            <button class="ghost" id="btnSaveCfg">Guardar</button>
+            <button class="ghost" id="btnReset">Reset local</button>
+            <button class="ghost" id="btnPing">Probar /api/me</button>
+            <button class="ghost" id="btnRefreshAll">Refrescar panel derecho</button>
+          </div>
+          <div class="small" style="margin-top:10px;">
+            Nota: Telemetría <span class="k">POST /api/telemetria</span> NO usa JWT; usa <span class="k">X-API-KEY</span>.
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 1: REGISTER -->
+      <section class="card" id="step-register">
+        <div class="cardHead">
+          <h2>1) Crear usuario (Register)</h2>
+          <span class="hint">POST /api/auth/register</span>
+        </div>
+        <div class="cardBody">
+          <div class="grid2">
+            <div>
+              <label>Email</label>
+              <input id="regEmail" placeholder="user@demo.cl">
+            </div>
+            <div>
+              <label>Password</label>
+              <input id="regPass" type="password" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="btnRow">
+            <button id="btnRegister">Crear usuario</button>
+            <button class="ghost" id="btnRegisterAndLogin">Crear y loguear</button>
+          </div>
+          <div class="mutedBox" style="margin-top:10px;">
+            Si ya existe, la API responde <span class="k">409</span> con <span class="k">{ "error": "Email ya existe" }</span>.
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 2: LOGIN -->
+      <section class="card" id="step-login">
+        <div class="cardHead">
+          <h2>2) Login</h2>
+          <span class="hint">POST /api/auth/login</span>
+        </div>
+        <div class="cardBody">
+          <div class="grid2">
+            <div>
+              <label>Email</label>
+              <input id="logEmail" placeholder="admin@minera.cl">
+            </div>
+            <div>
+              <label>Password</label>
+              <input id="logPass" type="password" placeholder="admin123">
+            </div>
+          </div>
+          <div class="btnRow">
+            <button id="btnLogin">Login</button>
+            <button class="ghost" id="btnLogout">Logout</button>
+          </div>
+          <div class="mutedBox" style="margin-top:10px;">
+            Al loguear se habilita el resto del flujo y se refresca el panel derecho.
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 3: PLANTA -->
+      <section class="card" id="step-planta">
+        <div class="cardHead">
+          <h2>3) Planta</h2>
+          <span class="hint">POST/GET/PUT/DELETE /api/plantas</span>
+        </div>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label>Planta seleccionada (planta_id)</label>
+              <input id="plantaId" placeholder="(se llena al crear/seleccionar)" inputmode="numeric">
+            </div>
+            <div>
+              <label>Nombre (requerido)</label>
+              <input id="pNombre" placeholder="Planta Norte">
+            </div>
+            <div>
+              <label>Ubicación</label>
+              <input id="pUbicacion" placeholder="Antofagasta">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Email notificaciones</label>
+              <input id="pEmailNotif" placeholder="alarmas@planta.cl">
+            </div>
+          </div>
+          <div class="btnRow">
+            <button id="btnCreatePlanta">Crear planta</button>
+            <button class="ghost" id="btnGetPlantas">Listar mis plantas</button>
+            <button class="ghost" id="btnUpdatePlanta">Actualizar planta</button>
+            <button class="bad" id="btnDeletePlanta">Eliminar planta (soft)</button>
+          </div>
+          <div class="small" style="margin-top:10px;">
+            Eliminar planta hace soft-delete y libera asignaciones. No borra telemetría.
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 4: MOTOR -->
+      <section class="card" id="step-motor">
+        <div class="cardHead">
+          <h2>4) Motor (dentro de la planta)</h2>
+          <span class="hint">POST /api/plantas/{planta_id}/motores</span>
+        </div>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label>Motor seleccionado (motor_id)</label>
+              <input id="motorId" placeholder="(se llena al crear/seleccionar)" inputmode="numeric">
+            </div>
+            <div>
+              <label>planta_id (requerido para crear)</label>
+              <input id="motorPlantaId" placeholder="(usa planta seleccionada)" inputmode="numeric">
+            </div>
+            <div>
+              <label>codigo (requerido, único por planta)</label>
+              <input id="mCodigo" placeholder="MTR-001">
+            </div>
+          </div>
+
+          <div class="row">
+            <div><label>modelo</label><input id="mModelo" placeholder="ABB X200"></div>
+            <div><label>ubicacion</label><input id="mUbicacion" placeholder="Línea 3 / Sector A"></div>
+            <div><label>descripcion</label><input id="mDescripcion" placeholder="Motor principal"></div>
+          </div>
+
+          <div class="row">
+            <div><label>num_anillos</label><input id="mNumAnillos" type="number" placeholder="2"></div>
+            <div><label>carbones_por_anillo</label><input id="mCarbPorAnillo" type="number" placeholder="8"></div>
+            <div><label>alto_carbon_mm</label><input id="mAltoCarbon" type="number" step="0.01" placeholder="60"></div>
+          </div>
+
+          <div class="row">
+            <div><label>prealarma_mm</label><input id="mPrealarma" type="number" step="0.01" placeholder="10"></div>
+            <div><label>minimo_cambio_mm</label><input id="mMinCambio" type="number" step="0.01" placeholder="5"></div>
+            <div><label>umbral_desgaste_perc</label><input id="mUmbral" type="number" step="0.01" placeholder="80"></div>
+          </div>
+
+          <div class="row">
+            <div><label>duracion_estimada_dias</label><input id="mDuracionDias" type="number" placeholder="90"></div>
+          </div>
+
+          <div class="btnRow">
+            <button id="btnCreateMotor">Crear motor</button>
+            <button class="ghost" id="btnGetMotores">Listar motores de planta</button>
+            <button class="ghost" id="btnUpdateMotor">Actualizar motor</button>
+            <button class="bad" id="btnDeleteMotor">Eliminar motor (soft)</button>
+          </div>
+
+          <div class="mutedBox" style="margin-top:10px;">
+            Si te da <span class="k">409</span> por duplicado: el <span class="k">codigo</span> ya existe en esa planta.
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 5: ANILLO -->
+      <section class="card" id="step-anillo">
+        <div class="cardHead">
+          <h2>5) Anillo (dentro del motor)</h2>
+          <span class="hint">POST /api/motores/{motor_id}/anillos</span>
+        </div>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label>Anillo seleccionado (anillo_id)</label>
+              <input id="anilloId" placeholder="(se llena al crear/seleccionar)" inputmode="numeric">
+            </div>
+            <div>
+              <label>motor_id (requerido para crear)</label>
+              <input id="anilloMotorId" placeholder="(usa motor seleccionado)" inputmode="numeric">
+            </div>
+            <div>
+              <label>numero_anillo (requerido)</label>
+              <input id="aNumero" type="number" placeholder="1">
+            </div>
+          </div>
+          <div class="btnRow">
+            <button id="btnCreateAnillo">Crear anillo</button>
+            <button class="ghost" id="btnGetAnillos">Listar anillos de motor</button>
+            <button class="ghost" id="btnUpdateAnillo">Actualizar anillo</button>
+            <button class="bad" id="btnDeleteAnillo">Eliminar anillo (soft)</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 6: CARBON -->
+      <section class="card" id="step-carbon">
+        <div class="cardHead">
+          <h2>6) Carbón (dentro del anillo)</h2>
+          <span class="hint">POST /api/anillos/{anillo_id}/carbones</span>
+        </div>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label>Carbón seleccionado (carbon_id)</label>
+              <input id="carbonId" placeholder="(se llena al crear/seleccionar)" inputmode="numeric">
+            </div>
+            <div>
+              <label>anillo_id (requerido para crear)</label>
+              <input id="carbonAnilloId" placeholder="(usa anillo seleccionado)" inputmode="numeric">
+            </div>
+            <div>
+              <label>numero_carbon (requerido)</label>
+              <input id="cNumero" type="number" placeholder="1">
+            </div>
+          </div>
+          <div class="row">
+            <div><label>medida_inicial_mm (requerido)</label><input id="cMedida" type="number" step="0.01" placeholder="60"></div>
+            <div><label>umbral_alerta_perc (requerido)</label><input id="cUmbral" type="number" step="0.01" placeholder="80"></div>
+            <div><label>duracion_estimada_dias</label><input id="cDuracion" type="number" placeholder="90"></div>
+          </div>
+          <div class="btnRow">
+            <button id="btnCreateCarbon">Crear carbón</button>
+            <button class="ghost" id="btnGetCarbones">Listar carbones de anillo</button>
+            <button class="ghost" id="btnGetCarbon">Ver carbón</button>
+            <button class="ghost" id="btnUpdateCarbon">Actualizar carbón</button>
+            <button class="bad" id="btnDeleteCarbon">Eliminar carbón (soft)</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 7: NODO -->
+      <section class="card" id="step-nodo">
+        <div class="cardHead">
+          <h2>7) Nodo LoRa (registro)</h2>
+          <span class="hint">POST/GET/PUT/DELETE /api/nodos</span>
+        </div>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label>deveui (requerido)</label>
+              <input id="nDeveui" placeholder="00800000A000CE72">
+            </div>
+            <div>
+              <label>alias</label>
+              <input id="nAlias" placeholder="Sensor 1">
+            </div>
+            <div>
+              <label>estado (solo update: disponible|ocupado|inactivo)</label>
+              <select id="nEstado">
+                <option value="">(sin cambiar)</option>
+                <option>disponible</option>
+                <option>ocupado</option>
+                <option>inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div class="btnRow">
+            <button id="btnCreateNodo">Crear nodo</button>
+            <button class="ghost" id="btnGetNodos">Listar nodos</button>
+            <button class="ghost" id="btnUpdateNodo">Actualizar nodo</button>
+            <button class="bad" id="btnDeleteNodo">Desactivar nodo (soft)</button>
+          </div>
+          <div class="small" style="margin-top:10px;">
+            Nota: DELETE falla con <span class="k">409</span> si el nodo está <span class="k">ocupado</span>.
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 8: ASIGNAR -->
+      <section class="card" id="step-asignar">
+        <div class="cardHead">
+          <h2>8) Asignación nodo ↔ carbón</h2>
+          <span class="hint">POST /api/carbones/{carbon_id}/asignar</span>
+        </div>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label>carbon_id (requerido)</label>
+              <input id="asCarbonId" placeholder="(usa carbón seleccionado)" inputmode="numeric">
+            </div>
+            <div>
+              <label>deveui (requerido)</label>
+              <input id="asDeveui" placeholder="(usa nodo seleccionado)">
+            </div>
+          </div>
+          <div class="btnRow">
+            <button class="okbtn" id="btnAsignar">Asignar</button>
+            <button class="ghost" id="btnDesasignar">Desasignar</button>
+            <button class="ghost" id="btnHistAsign">Ver historial</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- STEP 9: TELEMETRÍA -->
+      <section class="card" id="step-telemetria">
+        <div class="cardHead">
+          <h2>9) Telemetría</h2>
+          <span class="hint">POST /api/telemetria (API KEY) + GET/CSV por carbón (JWT)</span>
+        </div>
+        <div class="cardBody">
+          <div class="grid2">
+            <div>
+              <label>Enviar telemetría (API KEY) — JSON</label>
+              <textarea id="telPayload">{
+  "deveui": "00800000A000CE72",
+  "ax": 0.1, "ay": 0.2, "az": 1.0,
+  "gx": 0.0, "gy": 0.0, "gz": 0.0,
+  "desgaste": 12.3,
+  "bat": 98,
+  "fecha": "2026-02-16T12:00:00Z"
+}</textarea>
+              <div class="btnRow">
+                <button id="btnPostTelemetria">Enviar telemetría</button>
+                <button class="ghost" id="btnTelAutofill">Autocompletar con nodo seleccionado</button>
+              </div>
+              <div class="small" style="margin-top:8px;">
+                Campos del sensor: <span class="k">ax/ay/az</span> + <span class="k">gx/gy/gz</span> + <span class="k">bat</span>.
+              </div>
+            </div>
+
+            <div>
+              <label>Consultar telemetría por carbón (JWT)</label>
+              <div class="row">
+                <div><label>carbon_id</label><input id="telCarbonId" placeholder="(usa carbón seleccionado)" inputmode="numeric"></div>
+                <div><label>from (ISO)</label><input id="telFrom" placeholder="2026-02-16T00:00:00Z"></div>
+                <div><label>to (ISO)</label><input id="telTo" placeholder="2026-02-16T23:59:59Z"></div>
+              </div>
+              <div class="row">
+                <div><label>limit (1..5000)</label><input id="telLimit" type="number" placeholder="500"></div>
+                <div><label>offset</label><input id="telOffset" type="number" placeholder="0"></div>
+              </div>
+              <div class="btnRow">
+                <button class="ghost" id="btnGetTelemetria">Consultar</button>
+                <button class="ghost" id="btnExportTelemetria">Exportar CSV</button>
+              </div>
+
+              <div class="mutedBox" style="margin-top:10px;">
+                La consulta cruza historial de asignaciones: el carbón obtiene telemetría del nodo solo dentro de los rangos de asignación.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+
+      <!-- MANUAL REQUEST -->
+      <section class="card" id="step-manual">
+        <div class="cardHead">
+          <h2>Request manual</h2>
+          <span class="hint">Para probar TODO sin depender del flujo</span>
+        </div>
+        <div class="cardBody">
+          <div class="row">
+            <div>
+              <label>Método</label>
+              <select id="reqMethod">
+                <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+              </select>
+            </div>
+            <div>
+              <label>Path (ej: /api/plantas)</label>
+              <input id="reqPath" placeholder="/api/plantas">
+            </div>
+            <div>
+              <label>Auth</label>
+              <select id="reqAuth">
+                <option value="jwt">JWT</option>
+                <option value="none">Sin auth</option>
+                <option value="key">API KEY</option>
+              </select>
+            </div>
+          </div>
+          <label>JSON body (opcional)</label>
+          <textarea id="reqBody">{}</textarea>
+          <div class="btnRow">
+            <button id="btnSendReq">Enviar</button>
+            <button class="ghost" id="btnOpenModal">Ver último response grande</button>
+            <button class="ghost" id="btnCopyLast">Copiar último response</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row">
+            <div class="mutedBox">
+              <b>Selección rápida</b><br>
+              Planta: <span class="k" id="selPlanta">—</span><br>
+              Motor: <span class="k" id="selMotor">—</span><br>
+              Anillo: <span class="k" id="selAnillo">—</span><br>
+              Carbón: <span class="k" id="selCarbon">—</span><br>
+              Nodo: <span class="k" id="selNodo">—</span>
+            </div>
+            <div class="mutedBox">
+              <b>Debug (última request)</b>
+              <div id="dbg" class="dbg" style="margin-top:8px;">{}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: PANEL / TREE -->
+  <aside class="card">
+    <div class="cardHead">
+      <h2>Panel derecho: Mis recursos</h2>
+      <span class="hint">Click para seleccionar IDs</span>
+    </div>
+    <div class="cardBody">
+      <div class="mutedBox" style="margin-bottom:10px;">
+        Este panel llama a:<br>
+        <span class="k">GET /api/plantas</span> → <span class="k">GET /api/plantas/{id}/motores</span> → <span class="k">GET /api/motores/{id}/anillos</span> → <span class="k">GET /api/anillos/{id}/carbones</span><br>
+        y <span class="k">GET /api/nodos</span>.
+      </div>
+
+      <div class="btnRow" style="margin-top:0;">
+        <button class="ghost" id="btnLoadTree">Cargar jerarquía</button>
+        <button class="ghost" id="btnLoadNodos">Cargar nodos</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 10px;font-size:12px;color:#dbe7ff;">Jerarquía (Plantas → Motores → Anillos → Carbones)</h3>
+      <div id="tree" class="list"></div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 10px;font-size:12px;color:#dbe7ff;">Nodos</h3>
+      <div id="nodosList" class="list"></div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Modal -->
+<div id="modal">
+  <div class="modalBox">
+    <div class="modalTop">
+      <h3 id="modalTitle">Response</h3>
+      <div class="row" style="gap:8px; justify-content:flex-end;">
+        <button class="ghost" id="btnModalCopy">Copiar</button>
+        <button class="ghost" id="btnModalClose">Cerrar</button>
+      </div>
+    </div>
+    <div class="modalBody">
+      <pre id="modalPre">{}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toastWrap" id="toasts"></div>
+
+<script>
+  // ============================================================
+  // State
+  // ============================================================
+  const $ = (id) => document.getElementById(id);
+
+  const state = {
+    baseUrl: localStorage.getItem("sp.baseUrl") || "http://localhost:5000",
+    apiKey: localStorage.getItem("sp.apiKey") || "SISTEMA_LORA_SECRET_2026",
+    token: localStorage.getItem("sp.token") || "",
+    me: null,
+    selected: { planta:null, motor:null, anillo:null, carbon:null, deveui:null },
+    last: { req:null, res:null }
+  };
+
+  const FLOW = [
+    { id:"register", label:"1 Register", el:"step-register" },
+    { id:"login", label:"2 Login", el:"step-login" },
+    { id:"planta", label:"3 Planta", el:"step-planta" },
+    { id:"motor", label:"4 Motor", el:"step-motor" },
+    { id:"anillo", label:"5 Anillo", el:"step-anillo" },
+    { id:"carbon", label:"6 Carbón", el:"step-carbon" },
+    { id:"nodo", label:"7 Nodo", el:"step-nodo" },
+    { id:"asignar", label:"8 Asignar", el:"step-asignar" },
+    { id:"telemetria", label:"9 Telemetría", el:"step-telemetria" },
+    { id:"manual", label:"Manual", el:"step-manual" }
+  ];
+
+  // ============================================================
+  // UI helpers
+  // ============================================================
+  function toast(title, msg, kind="ok"){
+    const wrap = $("toasts");
+    const t = document.createElement("div");
+    t.className = `toast ${kind}`;
+    t.innerHTML = `<div class="tTitle">${escapeHtml(title)}</div><div class="tMsg">${escapeHtml(msg)}</div>`;
+    wrap.appendChild(t);
+    setTimeout(() => { t.style.opacity="0"; t.style.transition="opacity .35s"; }, 2600);
+    setTimeout(() => t.remove(), 3100);
+  }
+
+  function escapeHtml(s){
+    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+
+  function setDebug(obj){
+    $("dbg").textContent = JSON.stringify(obj, null, 2);
+  }
+
+  function openModal(title, obj){
+    $("modalTitle").textContent = title;
+    $("modalPre").textContent = (typeof obj === "string") ? obj : JSON.stringify(obj, null, 2);
+    $("modal").style.display="flex";
+  }
+  function closeModal(){ $("modal").style.display="none"; }
+
+  function normBase(url){ return (url || "").trim().replace(/\/+$/, ""); }
+  function joinUrl(base, path){
+    base = normBase(base);
+    path = (path || "").trim();
+    if (!path.startsWith("/")) path = "/" + path;
+    return base + path;
+  }
+
+  function setHeaderUI(){
+    const ok = !!state.token;
+    $("authDot").classList.toggle("ok", ok);
+    $("authText").textContent = ok ? "Autenticado" : "No autenticado";
+    $("baseShort").textContent = state.baseUrl;
+    $("userShort").textContent = state.me ? (state.me.email || state.me.id) : "—";
+    $("tokenShort").textContent = ok ? (state.token.slice(0, 18) + "…") : "—";
+  }
+
+  function setSelectionUI(){
+    $("selPlanta").textContent = state.selected.planta ?? "—";
+    $("selMotor").textContent  = state.selected.motor ?? "—";
+    $("selAnillo").textContent = state.selected.anillo ?? "—";
+    $("selCarbon").textContent = state.selected.carbon ?? "—";
+    $("selNodo").textContent   = state.selected.deveui ?? "—";
+  }
+
+  function persist(){
+    localStorage.setItem("sp.baseUrl", state.baseUrl);
+    localStorage.setItem("sp.apiKey", state.apiKey);
+    localStorage.setItem("sp.token", state.token);
+    setHeaderUI();
+  }
+
+  function setFlowTabs(){
+    const cont = $("flowTabs");
+    cont.innerHTML = "";
+    FLOW.forEach((t, idx) => {
+      const b = document.createElement("div");
+      b.className = "tab" + (idx===0 ? " active" : "");
+      b.textContent = t.label;
+      b.onclick = () => {
+        document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        const el = $(t.el);
+        if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
+      };
+      cont.appendChild(b);
+    });
+  }
+
+  function fillDerivedIds(){
+    // propagate selected ids into helper inputs
+    if (state.selected.planta != null) {
+      $("plantaId").value = state.selected.planta;
+      $("motorPlantaId").value = state.selected.planta;
+    }
+    if (state.selected.motor != null) {
+      $("motorId").value = state.selected.motor;
+      $("anilloMotorId").value = state.selected.motor;
+    }
+    if (state.selected.anillo != null) {
+      $("anilloId").value = state.selected.anillo;
+      $("carbonAnilloId").value = state.selected.anillo;
+    }
+    if (state.selected.carbon != null) {
+      $("carbonId").value = state.selected.carbon;
+      $("asCarbonId").value = state.selected.carbon;
+      $("telCarbonId").value = state.selected.carbon;
+    }
+    if (state.selected.deveui != null) {
+      $("nDeveui").value = state.selected.deveui;
+      $("asDeveui").value = state.selected.deveui;
+      // also in telemetry payload convenience
+    }
+    setSelectionUI();
+  }
+
+  function numOrNull(v){
+    const n = Number(String(v ?? "").trim());
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // ============================================================
+  // HTTP core
+  // ============================================================
+  async function apiFetch(path, { method="GET", auth="jwt", body=null, headers={} } = {}){
+    const url = joinUrl(state.baseUrl, path);
+
+    const h = { "Content-Type":"application/json", ...headers };
+
+    if (auth === "jwt"){
+      if (!state.token) throw new Error("No hay token JWT. Haz login.");
+      h["Authorization"] = "Bearer " + state.token;
+    } else if (auth === "key"){
+      h["X-API-KEY"] = state.apiKey || "";
+    }
+
+    const opts = { method, headers: h };
+    if (body !== null && method !== "GET") opts.body = JSON.stringify(body);
+
+    const started = performance.now();
+    const resp = await fetch(url, opts);
+    const elapsedMs = Math.round(performance.now() - started);
+
+    const ct = resp.headers.get("content-type") || "";
+    let data;
+    try{
+      if (ct.includes("application/json")) data = await resp.json();
+      else data = await resp.text();
+    } catch(e){
+      data = "(no parseable response body)";
+    }
+
+    // Build debug payload (more explicit)
+    const dbg = {
+      request: { method, url, auth, headers: redactHeaders(h), body },
+      response: { status: resp.status, ok: resp.ok, statusText: resp.statusText, contentType: ct, elapsedMs, data }
+    };
+
+    state.last.req = dbg.request;
+    state.last.res = dbg.response;
+    setDebug(dbg);
+
+    // toast high-signal
+    if (resp.ok) toast(`OK ${method} ${path}`, `HTTP ${resp.status} · ${elapsedMs}ms`, "ok");
+    else toast(`ERROR ${method} ${path}`, `HTTP ${resp.status} · ${elapsedMs}ms`, "err");
+
+    // optional modal on errors (more explicit)
+    if (!resp.ok){
+      openModal(`ERROR ${method} ${path} (HTTP ${resp.status})`, dbg);
+    }
+
+    return dbg;
+  }
+
+  function redactHeaders(h){
+    const c = {...h};
+    if (c.Authorization) c.Authorization = "Bearer ***";
+    if (c["X-API-KEY"]) c["X-API-KEY"] = "***";
+    return c;
+  }
+
+  // ============================================================
+  // Auth
+  // ============================================================
+  async function doMe(){
+    const dbg = await apiFetch("/api/me", { method:"GET", auth:"jwt" });
+    if (dbg.response.ok){
+      state.me = dbg.response.data;
+      setHeaderUI();
+    }
+    return dbg;
+  }
+
+  // ============================================================
+  // Right panel loaders
+  // ============================================================
+  async function loadTree(){
+    $("tree").innerHTML = "";
+    const plantsDbg = await apiFetch("/api/plantas", { auth:"jwt" });
+    if (!plantsDbg.response.ok) return;
+
+    const plantas = plantsDbg.response.data || [];
+    if (!Array.isArray(plantas) || plantas.length === 0){
+      $("tree").innerHTML = `<div class="mutedBox">No tienes plantas aún.</div>`;
+      return;
+    }
+
+    for (const p of plantas){
+      const pEl = document.createElement("div");
+      pEl.className = "item";
+      pEl.innerHTML = `
+        <div class="itemTitle">
+          <span>Planta #${p.id} — ${escapeHtml(p.nombre || "(sin nombre)")}</span>
+          <span class="badge">planta_id=${p.id}</span>
+        </div>
+        <div class="itemMeta">${escapeHtml(p.ubicacion || "")} ${p.email_notificaciones ? "· " + escapeHtml(p.email_notificaciones) : ""}</div>
+      `;
+      pEl.onclick = () => {
+        state.selected.planta = p.id;
+        fillDerivedIds();
+        // auto jump to motor step
+        $("step-motor").scrollIntoView({behavior:"smooth", block:"start"});
+      };
+
+      // motores
+      const motorsDbg = await apiFetch(`/api/plantas/${p.id}/motores`, { auth:"jwt" });
+      const motores = motorsDbg.response.ok ? (motorsDbg.response.data || []) : [];
+      const mWrap = document.createElement("div");
+      mWrap.style.marginTop = "10px";
+      mWrap.style.display = "flex";
+      mWrap.style.flexDirection = "column";
+      mWrap.style.gap = "8px";
+
+      if (Array.isArray(motores) && motores.length){
+        for (const m of motores){
+          const mEl = document.createElement("div");
+          mEl.className = "item";
+          mEl.style.marginLeft = "10px";
+          mEl.innerHTML = `
+            <div class="itemTitle">
+              <span>Motor #${m.id} — ${escapeHtml(m.codigo || "(sin código)")}</span>
+              <span class="badge">motor_id=${m.id}</span>
+            </div>
+            <div class="itemMeta">${escapeHtml(m.modelo || "")} ${m.ubicacion ? "· " + escapeHtml(m.ubicacion) : ""}</div>
+          `;
+          mEl.onclick = (ev) => {
+            ev.stopPropagation();
+            state.selected.planta = p.id;
+            state.selected.motor = m.id;
+            fillDerivedIds();
+            $("step-anillo").scrollIntoView({behavior:"smooth", block:"start"});
+          };
+
+          // anillos
+          const aDbg = await apiFetch(`/api/motores/${m.id}/anillos`, { auth:"jwt" });
+          const anillos = aDbg.response.ok ? (aDbg.response.data || []) : [];
+          const aWrap = document.createElement("div");
+          aWrap.style.marginTop = "8px";
+          aWrap.style.display = "flex";
+          aWrap.style.flexDirection = "column";
+          aWrap.style.gap = "8px";
+
+          if (Array.isArray(anillos) && anillos.length){
+            for (const a of anillos){
+              const aEl = document.createElement("div");
+              aEl.className = "item";
+              aEl.style.marginLeft = "20px";
+              aEl.innerHTML = `
+                <div class="itemTitle">
+                  <span>Anillo #${a.id} — N° ${escapeHtml(a.numero_anillo)}</span>
+                  <span class="badge">anillo_id=${a.id}</span>
+                </div>
+                <div class="itemMeta">motor_id=${m.id}</div>
+              `;
+              aEl.onclick = (ev) => {
+                ev.stopPropagation();
+                state.selected.planta = p.id;
+                state.selected.motor = m.id;
+                state.selected.anillo = a.id;
+                fillDerivedIds();
+                $("step-carbon").scrollIntoView({behavior:"smooth", block:"start"});
+              };
+
+              // carbones
+              const cDbg = await apiFetch(`/api/anillos/${a.id}/carbones`, { auth:"jwt" });
+              const carbones = cDbg.response.ok ? (cDbg.response.data || []) : [];
+              const cWrap = document.createElement("div");
+              cWrap.style.marginTop = "8px";
+              cWrap.style.display = "flex";
+              cWrap.style.flexDirection = "column";
+              cWrap.style.gap = "8px";
+
+              if (Array.isArray(carbones) && carbones.length){
+                for (const c of carbones){
+                  const cEl = document.createElement("div");
+                  cEl.className = "item";
+                  cEl.style.marginLeft = "30px";
+                  const dev = c.deveui_actual ? `· deveui_actual=${c.deveui_actual}` : "";
+                  cEl.innerHTML = `
+                    <div class="itemTitle">
+                      <span>Carbón #${c.id} — N° ${escapeHtml(c.numero_carbon)}</span>
+                      <span class="badge">carbon_id=${c.id}</span>
+                    </div>
+                    <div class="itemMeta">medida_inicial_mm=${escapeHtml(c.medida_inicial_mm)} · umbral=${escapeHtml(c.umbral_alerta_perc)}% ${dev}</div>
+                  `;
+                  cEl.onclick = (ev) => {
+                    ev.stopPropagation();
+                    state.selected.planta = p.id;
+                    state.selected.motor = m.id;
+                    state.selected.anillo = a.id;
+                    state.selected.carbon = c.id;
+                    fillDerivedIds();
+                    $("step-asignar").scrollIntoView({behavior:"smooth", block:"start"});
+                  };
+                  cWrap.appendChild(cEl);
+                }
+              } else {
+                const empty = document.createElement("div");
+                empty.className = "mutedBox";
+                empty.style.marginLeft = "30px";
+                empty.textContent = "Sin carbones en este anillo.";
+                cWrap.appendChild(empty);
+              }
+
+              aWrap.appendChild(aEl);
+              aWrap.appendChild(cWrap);
+            }
+          } else {
+            const empty = document.createElement("div");
+            empty.className = "mutedBox";
+            empty.style.marginLeft = "20px";
+            empty.textContent = "Sin anillos en este motor.";
+            aWrap.appendChild(empty);
+          }
+
+          mEl.appendChild(aWrap);
+          mWrap.appendChild(mEl);
+        }
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "mutedBox";
+        empty.style.marginLeft = "10px";
+        empty.textContent = "Sin motores en esta planta.";
+        mWrap.appendChild(empty);
+      }
+
+      pEl.appendChild(mWrap);
+      $("tree").appendChild(pEl);
+    }
+  }
+
+  async function loadNodos(){
+    $("nodosList").innerHTML = "";
+    const dbg = await apiFetch("/api/nodos", { auth:"jwt" });
+    if (!dbg.response.ok) return;
+
+    const nodos = dbg.response.data || [];
+    if (!Array.isArray(nodos) || nodos.length === 0){
+      $("nodosList").innerHTML = `<div class="mutedBox">No hay nodos registrados aún.</div>`;
+      return;
+    }
+
+    for (const n of nodos){
+      const el = document.createElement("div");
+      el.className = "item";
+      const estado = n.estado || "—";
+      const bat = (n.bateria ?? "—");
+      el.innerHTML = `
+        <div class="itemTitle">
+          <span>${escapeHtml(n.alias || "Nodo")} — ${escapeHtml(n.deveui)}</span>
+          <span class="badge">deveui</span>
+        </div>
+        <div class="itemMeta">estado=${escapeHtml(estado)} · bateria=${escapeHtml(bat)}%</div>
+      `;
+      el.onclick = () => {
+        state.selected.deveui = n.deveui;
+        fillDerivedIds();
+        $("step-asignar").scrollIntoView({behavior:"smooth", block:"start"});
+      };
+      $("nodosList").appendChild(el);
+    }
+  }
+
+  // ============================================================
+  // Wire UI
+  // ============================================================
+  function init(){
+    $("baseUrl").value = state.baseUrl;
+    $("apiKey").value  = state.apiKey;
+    setFlowTabs();
+    setHeaderUI();
+    setSelectionUI();
+    fillDerivedIds();
+  }
+
+  $("btnSaveCfg").onclick = () => {
+    state.baseUrl = normBase($("baseUrl").value);
+    state.apiKey  = ($("apiKey").value || "").trim();
+    persist();
+    toast("Config guardada", `Base: ${state.baseUrl}`, "ok");
+  };
+
+  $("btnReset").onclick = () => {
+    if (!confirm("¿Borrar baseUrl/apiKey/token local?")) return;
+    localStorage.removeItem("sp.baseUrl");
+    localStorage.removeItem("sp.apiKey");
+    localStorage.removeItem("sp.token");
+    state.baseUrl = "http://localhost:5000";
+    state.apiKey = "SISTEMA_LORA_SECRET_2026";
+    state.token = "";
+    state.me = null;
+    $("baseUrl").value = state.baseUrl;
+    $("apiKey").value = state.apiKey;
+    persist();
+    toast("Reset", "LocalStorage limpiado", "ok");
+  };
+
+  $("btnPing").onclick = async () => {
+    try{ await doMe(); }
+    catch(e){ openModal("Error /api/me", String(e)); }
+  };
+
+  $("btnRefreshAll").onclick = async () => {
+    if (!state.token) return toast("No autenticado", "Haz login primero.", "err");
+    await doMe().catch(()=>{});
+    await loadTree().catch(()=>{});
+    await loadNodos().catch(()=>{});
+  };
+
+  $("btnLoadTree").onclick = async () => loadTree();
+  $("btnLoadNodos").onclick = async () => loadNodos();
+
+  $("btnModalClose").onclick = closeModal;
+  $("btnModalCopy").onclick = async () => navigator.clipboard.writeText($("modalPre").textContent || "");
+  $("btnOpenModal").onclick = () => openModal("Último response (debug)", { request: state.last.req, response: state.last.res });
+  $("btnCopyLast").onclick = async () => navigator.clipboard.writeText(JSON.stringify({ request: state.last.req, response: state.last.res }, null, 2));
+
+  // Register
+  $("btnRegister").onclick = async () => {
+    const email = ($("regEmail").value || "").trim().toLowerCase();
+    const password = $("regPass").value || "";
+    if (!email || !password) return toast("Faltan datos", "email y password son requeridos", "err");
+    await apiFetch("/api/auth/register", { method:"POST", auth:"none", body:{ email, password } });
+  };
+
+  $("btnRegisterAndLogin").onclick = async () => {
+    const email = ($("regEmail").value || "").trim().toLowerCase();
+    const password = $("regPass").value || "";
+    if (!email || !password) return toast("Faltan datos", "email y password son requeridos", "err");
+    const r1 = await apiFetch("/api/auth/register", { method:"POST", auth:"none", body:{ email, password } });
+    if (!r1.response.ok && r1.response.status !== 409){
+      return;
+    }
+    $("logEmail").value = email;
+    $("logPass").value = password;
+    $("btnLogin").click();
+  };
+
+  // Login
+  $("btnLogin").onclick = async () => {
+    const email = ($("logEmail").value || "").trim().toLowerCase();
+    const password = $("logPass").value || "";
+    if (!email || !password) return toast("Faltan datos", "email y password son requeridos", "err");
+
+    const dbg = await apiFetch("/api/auth/login", { method:"POST", auth:"none", body:{ email, password } });
+    if (dbg.response.ok && dbg.response.data && dbg.response.data.token){
+      state.token = dbg.response.data.token;
+      persist();
+      await doMe().catch(()=>{});
+      toast("Login", "Token guardado. Panel se actualizará.", "ok");
+      await loadTree().catch(()=>{});
+      await loadNodos().catch(()=>{});
+    }
+  };
+
+  $("btnLogout").onclick = () => {
+    state.token = "";
+    state.me = null;
+    persist();
+    toast("Logout", "Token eliminado", "ok");
+  };
+
+  // Plantas
+  $("btnCreatePlanta").onclick = async () => {
+    const body = {
+      nombre: ($("pNombre").value || "").trim(),
+      ubicacion: ($("pUbicacion").value || "").trim() || null,
+      email_notificaciones: ($("pEmailNotif").value || "").trim().toLowerCase() || null
+    };
+    if (!body.nombre) return toast("Falta nombre", "nombre es requerido", "err");
+    const dbg = await apiFetch("/api/plantas", { method:"POST", auth:"jwt", body });
+    if (dbg.response.ok && dbg.response.data && dbg.response.data.id != null){
+      state.selected.planta = dbg.response.data.id;
+      fillDerivedIds();
+      await loadTree().catch(()=>{});
+    }
+  };
+
+  $("btnGetPlantas").onclick = async () => { await apiFetch("/api/plantas", { method:"GET", auth:"jwt" }); };
+
+  $("btnUpdatePlanta").onclick = async () => {
+    const pid = numOrNull($("plantaId").value);
+    if (!pid) return toast("Falta planta_id", "Selecciona o escribe planta_id", "err");
+    const body = {
+      nombre: ($("pNombre").value || "").trim(),
+      ubicacion: ($("pUbicacion").value || "").trim() || null,
+      email_notificaciones: ($("pEmailNotif").value || "").trim().toLowerCase() || null
+    };
+    if (!body.nombre) return toast("Falta nombre", "nombre es requerido", "err");
+    await apiFetch(`/api/plantas/${pid}`, { method:"PUT", auth:"jwt", body });
+    await loadTree().catch(()=>{});
+  };
+
+  $("btnDeletePlanta").onclick = async () => {
+    const pid = numOrNull($("plantaId").value);
+    if (!pid) return toast("Falta planta_id", "Selecciona o escribe planta_id", "err");
+    if (!confirm("¿Eliminar planta (soft-delete)?")) return;
+    await apiFetch(`/api/plantas/${pid}`, { method:"DELETE", auth:"jwt" });
+    if (state.selected.planta === pid){
+      state.selected.planta = state.selected.motor = state.selected.anillo = state.selected.carbon = null;
+      fillDerivedIds();
+    }
+    await loadTree().catch(()=>{});
+  };
+
+  // Motores
+  $("btnCreateMotor").onclick = async () => {
+    const pid = numOrNull($("motorPlantaId").value) ?? state.selected.planta;
+    if (!pid) return toast("Falta planta_id", "Selecciona planta primero", "err");
+
+    const body = {
+      codigo: ($("mCodigo").value || "").trim(),
+      modelo: ($("mModelo").value || "").trim() || null,
+      ubicacion: ($("mUbicacion").value || "").trim() || null,
+      descripcion: ($("mDescripcion").value || "").trim() || null,
+      num_anillos: numOrNull($("mNumAnillos").value),
+      carbones_por_anillo: numOrNull($("mCarbPorAnillo").value),
+      alto_carbon_mm: numOrNull($("mAltoCarbon").value),
+      prealarma_mm: numOrNull($("mPrealarma").value),
+      minimo_cambio_mm: numOrNull($("mMinCambio").value),
+      umbral_desgaste_perc: numOrNull($("mUmbral").value),
+      duracion_estimada_dias: numOrNull($("mDuracionDias").value)
+    };
+    if (!body.codigo) return toast("Falta codigo", "codigo es requerido", "err");
+
+    const dbg = await apiFetch(`/api/plantas/${pid}/motores`, { method:"POST", auth:"jwt", body });
+    if (dbg.response.ok && dbg.response.data && dbg.response.data.id != null){
+      state.selected.planta = pid;
+      state.selected.motor = dbg.response.data.id;
+      fillDerivedIds();
+      await loadTree().catch(()=>{});
+    }
+  };
+
+  $("btnGetMotores").onclick = async () => {
+    const pid = numOrNull($("motorPlantaId").value) ?? state.selected.planta;
+    if (!pid) return toast("Falta planta_id", "Selecciona planta primero", "err");
+    await apiFetch(`/api/plantas/${pid}/motores`, { method:"GET", auth:"jwt" });
+  };
+
+  $("btnUpdateMotor").onclick = async () => {
+    const mid = numOrNull($("motorId").value) ?? state.selected.motor;
+    if (!mid) return toast("Falta motor_id", "Selecciona motor", "err");
+
+    const body = {
+      codigo: ($("mCodigo").value || "").trim(),
+      modelo: ($("mModelo").value || "").trim() || null,
+      ubicacion: ($("mUbicacion").value || "").trim() || null,
+      descripcion: ($("mDescripcion").value || "").trim() || null,
+      num_anillos: numOrNull($("mNumAnillos").value),
+      carbones_por_anillo: numOrNull($("mCarbPorAnillo").value),
+      alto_carbon_mm: numOrNull($("mAltoCarbon").value),
+      prealarma_mm: numOrNull($("mPrealarma").value),
+      minimo_cambio_mm: numOrNull($("mMinCambio").value),
+      umbral_desgaste_perc: numOrNull($("mUmbral").value),
+      duracion_estimada_dias: numOrNull($("mDuracionDias").value)
+    };
+    if (!body.codigo) return toast("Falta codigo", "codigo es requerido", "err");
+    await apiFetch(`/api/motores/${mid}`, { method:"PUT", auth:"jwt", body });
+    await loadTree().catch(()=>{});
+  };
+
+  $("btnDeleteMotor").onclick = async () => {
+    const mid = numOrNull($("motorId").value) ?? state.selected.motor;
+    if (!mid) return toast("Falta motor_id", "Selecciona motor", "err");
+    if (!confirm("¿Eliminar motor (soft-delete)?")) return;
+    await apiFetch(`/api/motores/${mid}`, { method:"DELETE", auth:"jwt" });
+    if (state.selected.motor === mid){
+      state.selected.motor = state.selected.anillo = state.selected.carbon = null;
+      fillDerivedIds();
+    }
+    await loadTree().catch(()=>{});
+  };
+
+  // Anillos
+  $("btnCreateAnillo").onclick = async () => {
+    const mid = numOrNull($("anilloMotorId").value) ?? state.selected.motor;
+    if (!mid) return toast("Falta motor_id", "Selecciona motor primero", "err");
+    const numero = numOrNull($("aNumero").value);
+    if (numero === null) return toast("Falta numero_anillo", "numero_anillo es requerido", "err");
+
+    const dbg = await apiFetch(`/api/motores/${mid}/anillos`, { method:"POST", auth:"jwt", body:{ numero_anillo: numero } });
+    if (dbg.response.ok && dbg.response.data && dbg.response.data.id != null){
+      state.selected.motor = mid;
+      state.selected.anillo = dbg.response.data.id;
+      fillDerivedIds();
+      await loadTree().catch(()=>{});
+    }
+  };
+
+  $("btnGetAnillos").onclick = async () => {
+    const mid = numOrNull($("anilloMotorId").value) ?? state.selected.motor;
+    if (!mid) return toast("Falta motor_id", "Selecciona motor", "err");
+    await apiFetch(`/api/motores/${mid}/anillos`, { method:"GET", auth:"jwt" });
+  };
+
+  $("btnUpdateAnillo").onclick = async () => {
+    const aid = numOrNull($("anilloId").value) ?? state.selected.anillo;
+    if (!aid) return toast("Falta anillo_id", "Selecciona anillo", "err");
+    const numero = numOrNull($("aNumero").value);
+    if (numero === null) return toast("Falta numero_anillo", "numero_anillo es requerido", "err");
+    await apiFetch(`/api/anillos/${aid}`, { method:"PUT", auth:"jwt", body:{ numero_anillo: numero } });
+    await loadTree().catch(()=>{});
+  };
+
+  $("btnDeleteAnillo").onclick = async () => {
+    const aid = numOrNull($("anilloId").value) ?? state.selected.anillo;
+    if (!aid) return toast("Falta anillo_id", "Selecciona anillo", "err");
+    if (!confirm("¿Eliminar anillo (soft-delete)?")) return;
+    await apiFetch(`/api/anillos/${aid}`, { method:"DELETE", auth:"jwt" });
+    if (state.selected.anillo === aid){
+      state.selected.anillo = state.selected.carbon = null;
+      fillDerivedIds();
+    }
+    await loadTree().catch(()=>{});
+  };
+
+  // Carbones
+  $("btnCreateCarbon").onclick = async () => {
+    const aid = numOrNull($("carbonAnilloId").value) ?? state.selected.anillo;
+    if (!aid) return toast("Falta anillo_id", "Selecciona anillo primero", "err");
+
+    const body = {
+      numero_carbon: numOrNull($("cNumero").value),
+      medida_inicial_mm: numOrNull($("cMedida").value),
+      umbral_alerta_perc: numOrNull($("cUmbral").value),
+      duracion_estimada_dias: numOrNull($("cDuracion").value)
+    };
+    if (body.numero_carbon === null || body.medida_inicial_mm === null || body.umbral_alerta_perc === null){
+      return toast("Faltan campos", "numero_carbon, medida_inicial_mm, umbral_alerta_perc son requeridos", "err");
+    }
+
+    const dbg = await apiFetch(`/api/anillos/${aid}/carbones`, { method:"POST", auth:"jwt", body });
+    if (dbg.response.ok && dbg.response.data && dbg.response.data.id != null){
+      state.selected.anillo = aid;
+      state.selected.carbon = dbg.response.data.id;
+      fillDerivedIds();
+      await loadTree().catch(()=>{});
+    }
+  };
+
+  $("btnGetCarbones").onclick = async () => {
+    const aid = numOrNull($("carbonAnilloId").value) ?? state.selected.anillo;
+    if (!aid) return toast("Falta anillo_id", "Selecciona anillo", "err");
+    await apiFetch(`/api/anillos/${aid}/carbones`, { method:"GET", auth:"jwt" });
+  };
+
+  $("btnGetCarbon").onclick = async () => {
+    const cid = numOrNull($("carbonId").value) ?? state.selected.carbon;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+    await apiFetch(`/api/carbones/${cid}`, { method:"GET", auth:"jwt" });
+  };
+
+  $("btnUpdateCarbon").onclick = async () => {
+    const cid = numOrNull($("carbonId").value) ?? state.selected.carbon;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+    const body = {
+      medida_inicial_mm: numOrNull($("cMedida").value),
+      umbral_alerta_perc: numOrNull($("cUmbral").value),
+      duracion_estimada_dias: numOrNull($("cDuracion").value)
+    };
+    if (body.medida_inicial_mm === null || body.umbral_alerta_perc === null){
+      return toast("Faltan campos", "medida_inicial_mm y umbral_alerta_perc son requeridos", "err");
+    }
+    await apiFetch(`/api/carbones/${cid}`, { method:"PUT", auth:"jwt", body });
+    await loadTree().catch(()=>{});
+  };
+
+  $("btnDeleteCarbon").onclick = async () => {
+    const cid = numOrNull($("carbonId").value) ?? state.selected.carbon;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+    if (!confirm("¿Eliminar carbón (soft-delete)?")) return;
+    await apiFetch(`/api/carbones/${cid}`, { method:"DELETE", auth:"jwt" });
+    if (state.selected.carbon === cid){
+      state.selected.carbon = null;
+      fillDerivedIds();
+    }
+    await loadTree().catch(()=>{});
+  };
+
+  // Nodos
+  $("btnCreateNodo").onclick = async () => {
+    const deveui = ($("nDeveui").value || "").trim();
+    const alias = ($("nAlias").value || "").trim() || null;
+    if (!deveui) return toast("Falta deveui", "deveui es requerido", "err");
+    const dbg = await apiFetch("/api/nodos", { method:"POST", auth:"jwt", body:{ deveui, alias } });
+    if (dbg.response.ok){
+      state.selected.deveui = deveui;
+      fillDerivedIds();
+      await loadNodos().catch(()=>{});
+    }
+  };
+
+  $("btnGetNodos").onclick = async () => { await apiFetch("/api/nodos", { method:"GET", auth:"jwt" }); await loadNodos().catch(()=>{}); };
+
+  $("btnUpdateNodo").onclick = async () => {
+    const deveui = ($("nDeveui").value || "").trim() || state.selected.deveui;
+    if (!deveui) return toast("Falta deveui", "Selecciona o escribe deveui", "err");
+    const alias = ($("nAlias").value || "").trim() || null;
+    const estado = ($("nEstado").value || "").trim() || null;
+    const body = { alias };
+    if (estado) body.estado = estado;
+    await apiFetch(`/api/nodos/${encodeURIComponent(deveui)}`, { method:"PUT", auth:"jwt", body });
+    await loadNodos().catch(()=>{});
+  };
+
+  $("btnDeleteNodo").onclick = async () => {
+    const deveui = ($("nDeveui").value || "").trim() || state.selected.deveui;
+    if (!deveui) return toast("Falta deveui", "Selecciona o escribe deveui", "err");
+    if (!confirm("¿Desactivar nodo (soft-delete)?")) return;
+    await apiFetch(`/api/nodos/${encodeURIComponent(deveui)}`, { method:"DELETE", auth:"jwt" });
+    if (state.selected.deveui === deveui){
+      state.selected.deveui = null;
+      fillDerivedIds();
+    }
+    await loadNodos().catch(()=>{});
+  };
+
+  // Asignación
+  $("btnAsignar").onclick = async () => {
+    const cid = numOrNull($("asCarbonId").value) ?? state.selected.carbon;
+    const deveui = ($("asDeveui").value || "").trim() || state.selected.deveui;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+    if (!deveui) return toast("Falta deveui", "Selecciona nodo", "err");
+    await apiFetch(`/api/carbones/${cid}/asignar`, { method:"POST", auth:"jwt", body:{ deveui } });
+    await loadTree().catch(()=>{});
+    await loadNodos().catch(()=>{});
+  };
+
+  $("btnDesasignar").onclick = async () => {
+    const cid = numOrNull($("asCarbonId").value) ?? state.selected.carbon;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+    await apiFetch(`/api/carbones/${cid}/desasignar`, { method:"POST", auth:"jwt", body:{} });
+    await loadTree().catch(()=>{});
+    await loadNodos().catch(()=>{});
+  };
+
+  $("btnHistAsign").onclick = async () => {
+    const cid = numOrNull($("asCarbonId").value) ?? state.selected.carbon;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+    await apiFetch(`/api/carbones/${cid}/asignaciones`, { method:"GET", auth:"jwt" });
+  };
+
+  // Telemetría
+  $("btnTelAutofill").onclick = () => {
+    let body = {};
+    try{ body = JSON.parse($("telPayload").value || "{}"); }catch{ body = {}; }
+    const deveui = state.selected.deveui || ($("nDeveui").value || "").trim() || (body.deveui || "");
+    body.deveui = deveui || "00800000A000CE72";
+    if (!body.fecha) body.fecha = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+    $("telPayload").value = JSON.stringify(body, null, 2);
+    toast("Payload", "deveui/fecha autocompletados", "ok");
+  };
+
+  $("btnPostTelemetria").onclick = async () => {
+    let body;
+    try{ body = JSON.parse($("telPayload").value || "{}"); }
+    catch{ return toast("JSON inválido", "Corrige el payload de telemetría", "err"); }
+
+    // si hay deveui seleccionado, prioriza
+    if (state.selected.deveui) body.deveui = state.selected.deveui;
+
+    await apiFetch("/api/telemetria", { method:"POST", auth:"key", body });
+    await loadNodos().catch(()=>{});
+  };
+
+  $("btnGetTelemetria").onclick = async () => {
+    const cid = numOrNull($("telCarbonId").value) ?? state.selected.carbon;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+    const params = new URLSearchParams();
+    const f = ($("telFrom").value || "").trim(); if (f) params.set("from", f);
+    const t = ($("telTo").value || "").trim(); if (t) params.set("to", t);
+    const limit = ($("telLimit").value || "").trim(); if (limit) params.set("limit", limit);
+    const offset = ($("telOffset").value || "").trim(); if (offset) params.set("offset", offset);
+
+    const path = `/api/carbones/${cid}/telemetria` + (params.toString() ? `?${params}` : "");
+    await apiFetch(path, { method:"GET", auth:"jwt" });
+  };
+
+  $("btnExportTelemetria").onclick = async () => {
+    const cid = numOrNull($("telCarbonId").value) ?? state.selected.carbon;
+    if (!cid) return toast("Falta carbon_id", "Selecciona carbón", "err");
+
+    const params = new URLSearchParams();
+    const f = ($("telFrom").value || "").trim(); if (f) params.set("from", f);
+    const t = ($("telTo").value || "").trim(); if (t) params.set("to", t);
+
+    const url = joinUrl(state.baseUrl, `/api/carbones/${cid}/exportar` + (params.toString() ? `?${params}` : ""));
+    if (!state.token) return toast("No hay token", "Haz login", "err");
+
+    try{
+      const resp = await fetch(url, { headers: { "Authorization": "Bearer " + state.token }});
+      const text = await resp.text();
+      if (!resp.ok) return openModal(`ERROR CSV export (HTTP ${resp.status})`, { url, status: resp.status, body: text });
+
+      const blob = new Blob([text], { type:"text/csv" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `telemetria_carbon_${cid}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast("CSV", `Descargado telemetria_carbon_${cid}.csv`, "ok");
+    } catch(e){
+      openModal("Error export CSV", String(e));
+    }
+  };
+
+  // Manual request
+  $("btnSendReq").onclick = async () => {
+    const method = $("reqMethod").value;
+    const path = ($("reqPath").value || "").trim();
+    const auth = $("reqAuth").value;
+
+    if (!path) return toast("Falta path", "Escribe un path", "err");
+
+    let body = null;
+    const raw = ($("reqBody").value || "").trim();
+    if (method !== "GET"){
+      try{ body = raw ? JSON.parse(raw) : {}; }
+      catch{ return toast("JSON inválido", "Body manual inválido", "err"); }
+    }
+
+    await apiFetch(path, { method, auth, body: (method === "GET" ? null : body) });
+  };
+
+  // ============================================================
+  // Boot
+  // ============================================================
+  persist();
+  init();
+</script>
+</body>
+</html>

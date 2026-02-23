@@ -16,8 +16,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # ==========================================================
 # CONFIG
 # ==========================================================
-def init_db():
-
 BASE_DATOS_RUTA = "./"
 DB_PATH = os.path.join(BASE_DATOS_RUTA, "sistema_preventivo.db")
 
@@ -32,8 +30,6 @@ CORS(app)
 app.config["JWT_SECRET_KEY"] = SECRET_KEY_JWT
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = dt.timedelta(hours=ACCESS_TOKEN_HOURS)
 jwt = JWTManager(app)
-
-init_db()
 
 # ==========================================================
 # DB utils
@@ -1151,7 +1147,8 @@ def exportar_csv_carbon(carbon_id: int):
 # ==========================================================
 # MAIN
 # ==========================================================
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     # En producción: usa gunicorn/uwsgi, no app.run
     app.run(host="0.0.0.0", port=5000, debug=False)

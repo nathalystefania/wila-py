@@ -16,6 +16,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # ==========================================================
 # CONFIG
 # ==========================================================
+def init_db():
+
 BASE_DATOS_RUTA = "./"
 DB_PATH = os.path.join(BASE_DATOS_RUTA, "sistema_preventivo.db")
 
@@ -1149,9 +1151,7 @@ def exportar_csv_carbon(carbon_id: int):
 # ==========================================================
 # MAIN
 # ==========================================================
-# if __name__ == "__main__":
-#     init_db()
-#     # En producción: usa gunicorn/uwsgi, no app.run
-#     app.run(host="0.0.0.0", port=5000, debug=False)
 if __name__ == "__main__":
+    init_db()
+    # En producción: usa gunicorn/uwsgi, no app.run
     app.run(host="0.0.0.0", port=5000, debug=False)

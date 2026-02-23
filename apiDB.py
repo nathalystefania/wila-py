@@ -13,6 +13,10 @@ from flask_jwt_extended import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from flask import send_from_directory
+@app.route("/")
+def home():
+    return send_from_directory(".", "index.html")
 # ==========================================================
 # CONFIG
 # ==========================================================

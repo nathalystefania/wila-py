@@ -293,7 +293,7 @@
           <div class="grid2">
             <div>
               <label>Base URL API</label>
-              <input id="baseUrl" placeholder="http://localhost:5000">
+              <input id="baseUrl" placeholder="https://wila-py.onrender.com/index.html">
             </div>
             <div>
               <label>API Key Telemetría (X-API-KEY)</label>
@@ -775,7 +775,7 @@
   const $ = (id) => document.getElementById(id);
 
   const state = {
-    baseUrl: localStorage.getItem("sp.baseUrl") || "http://localhost:5000",
+    baseUrl: localStorage.getItem("sp.baseUrl") || "https://wila-py.onrender.com/index.html",
     apiKey: localStorage.getItem("sp.apiKey") || "SISTEMA_LORA_SECRET_2026",
     token: localStorage.getItem("sp.token") || "",
     me: null,
@@ -1191,7 +1191,7 @@
     localStorage.removeItem("sp.baseUrl");
     localStorage.removeItem("sp.apiKey");
     localStorage.removeItem("sp.token");
-    state.baseUrl = "http://localhost:5000";
+    state.baseUrl = "https://wila-py.onrender.com/index.html";
     state.apiKey = "SISTEMA_LORA_SECRET_2026";
     state.token = "";
     state.me = null;

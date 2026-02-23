@@ -14,9 +14,7 @@ from flask_jwt_extended import (
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from flask import send_from_directory
-@app.route("/")
-def home():
-    return send_from_directory(".", "index.html")
+
 # ==========================================================
 # CONFIG
 # ==========================================================
@@ -35,6 +33,9 @@ app.config["JWT_SECRET_KEY"] = SECRET_KEY_JWT
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = dt.timedelta(hours=ACCESS_TOKEN_HOURS)
 jwt = JWTManager(app)
 
+@app.route("/")
+def home():
+    return send_from_directory(".", "index.html")
 # ==========================================================
 # DB utils
 # ==========================================================

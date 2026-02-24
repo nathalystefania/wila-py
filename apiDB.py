@@ -27,7 +27,10 @@ API_KEY_TELEMETRIA = os.getenv("API_KEY_TELEMETRIA", "SISTEMA_LORA_SECRET_2026")
 ACCESS_TOKEN_HOURS = int(os.getenv("JWT_HOURS", "24"))
 
 app = Flask(__name__)
-CORS(app)
+
+# Configuración específica de CORS para el frontend
+allowed_origins = ["https://frontend-wila.netlify.app"]
+CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
 app.config["JWT_SECRET_KEY"] = SECRET_KEY_JWT
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = dt.timedelta(hours=ACCESS_TOKEN_HOURS)
